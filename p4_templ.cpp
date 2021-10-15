@@ -10,18 +10,30 @@
 
 using namespace std;
 int red = 0;
-int xC;
-int yC;
+int x;
+int y;
 int freq = 0.1;
 
-int xT;
-int yT;
+int xc;
+int yc;
+int r;
+int e;
 
+double a11,a12,a13,a21,a22,a23,a31,a32,a33,b1,b2,b3;
 
-int yCMax;
-int xCMax;
+int count = -1;
+int crossx;
+int crossy;
 
-int count;
+struct Orbit {
+	// logged position and time
+	std::vector<int> x;
+	std::vector<int> y;
+	std::vector<int> t;
+	int xc,yc,r;  // center and radius
+	int x_sunrise,y_sunrise;
+	double omega = 0.1;
+} orbit;
 
 
 void locateSun() {
@@ -34,87 +46,74 @@ void locateSun() {
 			green = get_pixel(image,row,col,1);
 			blue = get_pixel(image,row,col,2);
             if(red / ((blue+green /2) + 1) > 2 ) {     
-				yC = row;
-				xC = col;
-				count++;
-				
+				y = row;
+                count++;
+                orbit.y.push_back(y);
+                orbit.x.push_back(x);
+                orbit.t.push_back(count);
+				x = col;				
             }
         }
     }
 }
 
 
-struct Orbit {
-	// logged position and time
-	std::vector<int> x;
-	std::vector<int> y;
-	std::vector<int> t;
-	int xc,yc,r;  // center and radius
-	int x_sunrise,y_sunrise;
-	double omega = 0.1;
-} orbit;
 
-void reset(int time) {
-    if (xC == 0 || yC == 0) {
-        cout << "Sun is hidden" << endl;
-    } else {
-        cout << xC << " " << yC << endl;
-        orbit.t.push_back(time);
-        orbit.x.push_back(xC);
-        orbit.y.push_back(yC);
-    }
-}
+
+
+
+
+double D[3][3] = {
+    {a11,a12,a13},
+    {a21,a22,a23},
+    {a31,a32,a33}
+};
+double Dx[3][3] = {
+    {b1,a12,a13},
+    {b2,a22,a23},
+    {b3,a32,a33}
+};
+double Dy[3][3] = {
+    {a11,b1,a13},
+    {a21,b2,a23},
+    {a31,b3,a33}
+};
+
 
 void calculateOrbit(){
-    double a11 = orbit.y.size();
-    double a12 = 0;
-    double a13 = 0;
-    for (int i: orbit.t) {
-        a13 += cos(freq * i);
+    a11 = orbit.x.size();
+    a12 =0;
+    for(int i =0; i < orbit.t.size(); i++){
+        a13 +=cos(freq*orbit.t.at(i));
     }
+    a21 = 0;
+    a22 = orbit.x.size();
+    for(int i =0; i<orbit.t.size(); i++){
+        a23 += sin(freq*orbit.t.at(i));
 
-    double b1 = 0;
-    for (int i: orbit.x) {
-        b1 += i;
     }
-    double b2 = 0;
-    for (int i: orbit.y) {
-        b2 += i;
+    for(int i =0; i<orbit.t.size();i++){
+        a31+= cos(freq*orbit.t.at(i));
     }
-    double b3 = 0;
-    for (int i: orbit.x) {
-        b3 += i;
-    }
-    double temp = 0;
-    for (int i: orbit.t) {
-        temp += cos(freq * i);
-    }
-    b3 = b3 * temp;
-    double temp2 = 0;
-    temp = 0;
-    for (int i: orbit.y) {
-        temp += i;
-    }
-    for (int i: orbit.t) {
-        temp2 += sin(freq * i);
-    }
-    b3 = b3 + (temp * temp2);
-
-    double a21 = 0;
-    double a22 = orbit.y.size();
-    double a23 = 0;
-    for (int i: orbit.t) {
-        a23 += sin(freq * i);
-    }
-    double a31 = 0;
-    for (int i: orbit.t) {
-        a31 += cos(freq * i);
-    }
-    double a32 = 0;
-    for (int i: orbit.t) {
-        a32 += sin(freq * i);
+    for(int i =0; i<orbit.t.size();i++){
+        a32 += sin(freq*orbit.t.at(i));
     }
     double a33 = orbit.t.size();
+    for(int i =0; i<orbit.x.size(); i++){
+        b1 += orbit.x.at(i);
+    }
+    for(int i =0; i < orbit.t.size(); i++){
+        b2 += orbit.y.at(i);
+    }
+    for (int i =0; i<orbit.x.size(); i++){
+        b3 += orbit.x.at(i) * cos(orbit.omega*orbit.t.at(i) + (orbit.y.at(i) * sin(freq*orbit.t.at(i))));
+    }
+
+}
+}
+
+
+
 
 }
 
@@ -130,9 +129,7 @@ int main()
       
       // your code here
             locateSun();
-			reset(time);
-			calculateOrbit();
-			move_aim(time);
+            cout << a33 << endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
    }
 
