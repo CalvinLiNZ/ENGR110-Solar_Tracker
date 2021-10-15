@@ -12,7 +12,6 @@ using namespace std;
 int red = 0;
 int x;
 int y;
-int freq = 0.1;
 
 int xc;
 int yc;
@@ -24,6 +23,7 @@ double a11,a12,a13,a21,a22,a23,a31,a32,a33,b1,b2,b3;
 int count = -1;
 int crossx;
 int crossy;
+double angle;
 
 struct Orbit {
 	// logged position and time
@@ -58,11 +58,6 @@ void locateSun() {
 }
 
 
-
-
-
-
-
 double D[3][3] = {
     {a11,a12,a13},
     {a21,a22,a23},
@@ -78,25 +73,31 @@ double Dy[3][3] = {
     {a21,b2,a23},
     {a31,b3,a33}
 };
+double Dr[3][3] = {
+    {a11,a12,b1},
+    {a21,a22,b2},
+    {a31,a33,b3}
+};
+
 
 
 void calculateOrbit(){
     a11 = orbit.x.size();
     a12 =0;
     for(int i =0; i < orbit.t.size(); i++){
-        a13 +=cos(freq*orbit.t.at(i));
+        a13 +=cos(orbit.omega*orbit.t.at(i));
     }
     a21 = 0;
     a22 = orbit.x.size();
     for(int i =0; i<orbit.t.size(); i++){
-        a23 += sin(freq*orbit.t.at(i));
+        a23 += sin(orbit.omega*orbit.t.at(i));
 
     }
     for(int i =0; i<orbit.t.size();i++){
-        a31+= cos(freq*orbit.t.at(i));
+        a31+= cos(orbit.omega*orbit.t.at(i));
     }
     for(int i =0; i<orbit.t.size();i++){
-        a32 += sin(freq*orbit.t.at(i));
+        a32 += sin(orbit.omega*orbit.t.at(i));
     }
     double a33 = orbit.t.size();
     for(int i =0; i<orbit.x.size(); i++){
@@ -106,8 +107,25 @@ void calculateOrbit(){
         b2 += orbit.y.at(i);
     }
     for (int i =0; i<orbit.x.size(); i++){
-        b3 += orbit.x.at(i) * cos(orbit.omega*orbit.t.at(i) + (orbit.y.at(i) * sin(freq*orbit.t.at(i))));
+        b3 += orbit.x.at(i) * cos(orbit.omega*orbit.t.at(i) + (orbit.y.at(i) * sin(orbit.omega*orbit.t.at(i))));
     }
+
+    double det = a11 *(a22 * a33 - a23 * a32) - a12* (a21 * a33 - a23 * a31) - a13 *(a21 * a32 - a22 * a31);
+
+    double detx = b1 *(a22 * a33 - a23 * a32) - a12* (b2 * a33 - a23 * b3) - a13 *(b2 * a32 - a22 * b3);
+
+    double dety = a11 *(b2 * a33 - a23 * b3) - b1* (a21 * a33 - a23 * a31) - a13 *(a21 * b3 - b2 * a31);
+
+    double detr = a11 *(a22 * b3 - b2 * a32) - a12* (a21 * b3 - b2 * a31) - b1 *(a21 * a32 - a22 * a31);
+
+
+
+    xc = detx/det;
+    yc = dety/det;
+    r = detr/det;
+
+
+
 
 
 }
@@ -124,7 +142,11 @@ int main()
       
       // your code here
             locateSun();
-            cout << a33 << endl;
+            calculateOrbit();
+            get_aim(xc,yc);
+            double angle = atan2(y - yc, x - xc);
+            move_aim(angle);
+
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
    }
 
