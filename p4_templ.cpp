@@ -109,11 +109,6 @@ void calculateOrbit(){
         b3 += orbit.x.at(i) * cos(orbit.omega*orbit.t.at(i) + (orbit.y.at(i) * sin(freq*orbit.t.at(i))));
     }
 
-}
-}
-
-
-
 
 }
 
